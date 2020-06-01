@@ -11,7 +11,7 @@ const DisplayPerPage=10
 
 
 
-const SERVER_API="http://bevappserver2-env.eba-bpmmzn6g.ap-southeast-1.elasticbeanstalk.com/"
+const SERVER_API="gtalgos.com/"
 
 class PortfolioManager extends React.Component {
     
