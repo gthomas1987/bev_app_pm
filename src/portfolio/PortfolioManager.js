@@ -11,7 +11,8 @@ const DisplayPerPage=10
 
 
 
-const SERVER_API="gtalgos.com/"
+const SERVER_API="https://cbzghsqu3e.execute-api.ap-southeast-1.amazonaws.com/"
+//const SERVER_API="http://127.0.0.1:5000/"
 
 class PortfolioManager extends React.Component {
     
