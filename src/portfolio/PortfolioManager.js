@@ -11,7 +11,8 @@ const DisplayPerPage=10
 
 
 
-const SERVER_API="http://bevappserver2-env.eba-bpmmzn6g.ap-southeast-1.elasticbeanstalk.com/"
+const SERVER_API="https://cbzghsqu3e.execute-api.ap-southeast-1.amazonaws.com/"
+//const SERVER_API="http://127.0.0.1:5000/"
 
 class PortfolioManager extends React.Component {
     
@@ -19,11 +20,19 @@ class PortfolioManager extends React.Component {
       super();
       this.state = {
                     colorMode:"light",
+                    pvMode:"clean",
                     backgroundColor:"#ffffff",
                     showModalAddTrade: false,
                     Currencies:[],
                     positions:[],
                     trades:[],
+                    PortfolioStats:{},
+                    positions_clean:[],
+                    trades_clean:[],
+                    PortfolioStats_clean:{},
+                    positions_dirty:[],
+                    trades_dirty:[],
+                    PortfolioStats_dirty:{},
                     SectorDivision:{},
                     CountryDivision:{},
                     CurrencyDivision:{},
@@ -35,7 +44,6 @@ class PortfolioManager extends React.Component {
                     RedemptionDetails:{},
                     IssuerDivision:{},
                     PositionData:[],
-                    PortfolioStats:{},
                     ISINUniverse:[],
                     selectedTradeId:0,
                     selectedISIN:"All",
@@ -71,6 +79,7 @@ class PortfolioManager extends React.Component {
       this.compareDate=this.compareDate.bind(this);
       this.changePositonPage=this.changePositonPage.bind(this);
       this.handleChangeColorMode=this.handleChangeColorMode.bind(this);
+      this.handleChangePVMode=this.handleChangePVMode.bind(this);
     }
 
     
@@ -86,6 +95,26 @@ class PortfolioManager extends React.Component {
       }
       else{
         this.setState({colorMode:"light"})
+      }
+    }
+
+    handleChangePVMode(event){
+      console.log()
+      if(event.target.checked===true){
+        this.setState({pvMode:"dirty",
+                        positions:this.state.positions_dirty, 
+                        trades:this.state.trades_dirty, 
+                        PortfolioStats:this.state.PortfolioStats_dirty,
+                        DisplayPositions:this.state.positions_dirty.slice(0,DisplayPerPage),
+                        DisplayTrades:this.state.trades_dirty.slice(0,DisplayPerPage),})
+      }
+      else{
+        this.setState({pvMode:"clean",
+                        positions:this.state.positions_clean, 
+                        trades:this.state.trades_clean, 
+                        PortfolioStats:this.state.PortfolioStats_clean,
+                        DisplayPositions:this.state.positions_clean.slice(0,DisplayPerPage),
+                        DisplayTrades:this.state.trades_clean.slice(0,DisplayPerPage),})
       }
     }
 
@@ -231,14 +260,20 @@ class PortfolioManager extends React.Component {
         const results = await response.json();
         this.setState({ 
               Currencies:results.Currencies,
-              positions: Object.values(results.Positions.sort(this.compareString)),
-              trades: Object.values(results.Trades.sort(this.compareDate)),
+              positions: Object.values(results.Positions_CLEAN.sort(this.compareString)),
+              trades: Object.values(results.Trades_CLEAN.sort(this.compareDate)),
+              PortfolioStats:results.PortfolioStats_CLEAN,
+              positions_clean: Object.values(results.Positions_CLEAN.sort(this.compareString)),
+              trades_clean: Object.values(results.Trades_CLEAN.sort(this.compareDate)),
+              PortfolioStats_clean:results.PortfolioStats_CLEAN,
+              positions_dirty: Object.values(results.Positions.sort(this.compareString)),
+              trades_dirty: Object.values(results.Trades.sort(this.compareDate)),
+              PortfolioStats_dirty:results.PortfolioStats,
               SectorDivision: results.SectorDivision,
               IssuerDivision: results.IssuerDivision,
               CountryDivision: results.CountryDivision,
               CurrencyDivision:results.CurrencyDivision,
               PositionData:results.PositionData,
-              PortfolioStats:results.PortfolioStats,
               ISINUniverse:results.ISINUniverse,
               Cashflows:results.Cashflows,
               CashflowDetails:results.CashflowDetails,
@@ -246,8 +281,8 @@ class PortfolioManager extends React.Component {
               RedemptionDetails:results.RedemptionDetails,
               Coupons:results.Coupons,
               CouponDetails:results.CouponDetails,
-              DisplayPositions:Object.values(results.Positions.sort(this.compareString)).slice(0,DisplayPerPage),
-              DisplayTrades:Object.values(results.Trades.sort(this.compareDate)).slice(0,DisplayPerPage),
+              DisplayPositions:Object.values(results.Positions_CLEAN.sort(this.compareString)).slice(0,DisplayPerPage),
+              DisplayTrades:Object.values(results.Trades_CLEAN.sort(this.compareDate)).slice(0,DisplayPerPage),
             });
     }
     async componentDidMount(){
@@ -280,6 +315,78 @@ class PortfolioManager extends React.Component {
       return <div><DynamicTable data={this.state.selectedCashflowDetails} columns={["Date","ISIN","BondName","CCY","Amount"]}  colormode={this.state.colorMode} /></div>
     }
 
+    GetPNLDetails(listValue){
+      if(this.state.pvMode==="dirty"){
+        return <div>
+              Price=<NumberFormat value={listValue.PnLPrice} displayType={'text'} thousandSeparator={true}  decimalScale={0} /><br></br>
+              AI=<NumberFormat value={listValue.PnLAI} displayType={'text'} thousandSeparator={true}  decimalScale={0} /><br></br>
+              Coupons=<NumberFormat value={listValue.PnLCoup} displayType={'text'} thousandSeparator={true}  decimalScale={0} />
+            </div>
+      }
+      else{
+        return <div></div>
+      }
+    }
+
+    GetDailyPNLDetails(listValue){
+      if(this.state.pvMode==="dirty"){
+        return <div>
+              Price=<NumberFormat value={listValue.PnLDailyPrice} displayType={'text'} thousandSeparator={true}  decimalScale={0} /><br></br>
+              AI=<NumberFormat value={listValue.PnLDailyAI} displayType={'text'} thousandSeparator={true}  decimalScale={0} /><br></br>
+              Coupons=<NumberFormat value={listValue.PnLDailyCoup} displayType={'text'} thousandSeparator={true}  decimalScale={0} />
+            </div>
+      }
+      else{
+        return <div></div>
+      }
+    }
+
+    GetPNLDetailsTrade(listValue){
+      if(this.state.pvMode==="dirty"){
+        return <div>
+              Price=<NumberFormat value={listValue.Today_CPV-listValue.Purchase_CPV} displayType={'text'} thousandSeparator={true} decimalScale={0} /><br></br>
+              AI=<NumberFormat value={listValue.Today_AI-listValue.Purchase_AI} displayType={'text'} thousandSeparator={true} decimalScale={0} /><br></br>
+              Coupons=<NumberFormat value={listValue.Coupons} displayType={'text'} thousandSeparator={true} decimalScale={0} />
+            </div>
+      }
+      else{
+        return <div></div>
+      }
+    }
+
+    GetDailyPNLDetailsTrade(listValue){
+      if(this.state.pvMode==="dirty"){
+        return <div>
+              Price=<NumberFormat value={listValue.Today_CPV-listValue.Yday_CPV} displayType={'text'} thousandSeparator={true} decimalScale={0} /><br></br>
+              AI=<NumberFormat value={listValue.Today_AI-listValue.Yday_AI} displayType={'text'} thousandSeparator={true} decimalScale={0} /><br></br>
+              Coupons=<NumberFormat value={listValue.Coupons-listValue.CouponsYday} displayType={'text'} thousandSeparator={true} decimalScale={0} />
+            </div>
+      }
+      else{
+        return <div></div>
+      }
+    }
+
+    GetTradeSettlement(listValue){
+      if(this.state.pvMode==="dirty"){
+        return <div>
+              CPV=<NumberFormat value={listValue.Purchase_CPV} displayType={'text'} thousandSeparator={true} decimalScale={0} /><br></br>
+              AI=<NumberFormat value={listValue.Purchase_AI} displayType={'text'} thousandSeparator={true} decimalScale={0} />
+            </div>
+      }
+      else{return <div></div>}
+    }
+
+    GetTodaySettlement(listValue){
+      if(this.state.pvMode==="dirty"){
+        return <div>
+              CPV=<NumberFormat value={listValue.Today_CPV} displayType={'text'} thousandSeparator={true} decimalScale={0} /><br></br>
+              AI=<NumberFormat value={listValue.Today_AI} displayType={'text'} thousandSeparator={true} decimalScale={0} />
+            </div>
+      }
+      else{return <div></div>}
+    }
+
     render() {
 
       var ISINList = this.state.ISINUniverse.map(function (val) {     
@@ -301,10 +408,10 @@ class PortfolioManager extends React.Component {
       else if(Number(this.state.PortfolioStats.PnL)<0){
         colorTotalPnL="danger"
       }
-      if(Number(this.state.PortfolioStats.Return)>=0){
+      if(Number(this.state.PortfolioStats.Yield)>=0){
         colorReturn="success"
       }
-      else if(Number(this.state.PortfolioStats.Return)<0){
+      else if(Number(this.state.PortfolioStats.Yield)<0){
         colorReturn="danger"
       }
       if(Number(this.state.PortfolioStats.MarketValue)>=0){
@@ -367,8 +474,8 @@ class PortfolioManager extends React.Component {
         </Col>
         <Col>
         <Card bg={this.state.colorMode} border={colorReturn} text={colorReturn} style={{ fontSize: '25px' }}>
-        <Card.Header>Return</Card.Header>
-        <Card.Title><br></br> <NumberFormat value= {this.state.PortfolioStats.Return} displayType={'text'} suffix="%"  thousandSeparator={true}  decimalScale={2} /><br></br></Card.Title>
+        <Card.Header>Yield</Card.Header>
+        <Card.Title><br></br> <NumberFormat value= {this.state.PortfolioStats.Yield} displayType={'text'} suffix="%"  thousandSeparator={true}  decimalScale={2} /><br></br></Card.Title>
         </Card>
         </Col>
         <Col>
@@ -382,7 +489,16 @@ class PortfolioManager extends React.Component {
         <Form.Check 
           type="switch"
           id="color-mode-switch"
-          label=""
+          label="Color"
+          />
+        <br></br>
+        <br></br>
+        </Form>
+        <Form onClick={this.handleChangePVMode}>
+        <Form.Check 
+          type="switch"
+          id="pv-mode-switch"
+          label="Include AI/Coupons"
         />
       </Form>
         </Col>
@@ -404,10 +520,10 @@ class PortfolioManager extends React.Component {
                     <th>CCY</th>
                     <th>Quantity</th>
                     <th>Price</th>
+                    <th>Yield</th>
                     <th>Market Value</th>
                     <th>Total PnL</th>
                     <th>Daily PnL</th>
-                    <th>Total Return</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -419,10 +535,19 @@ class PortfolioManager extends React.Component {
                         <td>{listValue.CCY}</td>
                         <td style={{color:listValue.Quantity<0 ? "red": ""}}> <NumberFormat value={listValue.Quantity} displayType={'text'} thousandSeparator={true} decimalScale={0} /></td>
                         <td> {listValue.Price}</td>
+                        <td> {listValue.Yield}</td>
                         <td style={{color:listValue.MarketValue<0 ? "red": ""}}> <NumberFormat value={listValue.MarketValue} displayType={'text'} thousandSeparator={true} decimalScale={0} /></td>
-                        <td style={{color:listValue.PnL<0 ? "red": ""}}> <NumberFormat value={listValue.PnL} displayType={'text'} thousandSeparator={true} decimalScale={0} /></td>
-                        <td style={{color:listValue.PnLDaily<0 ? "red": ""}}> <NumberFormat value={listValue.PnLDaily} displayType={'text'} thousandSeparator={true}  decimalScale={0} /></td>
-                        <td style={{color:listValue.Return<0 ? "red": ""}}> <NumberFormat value={listValue.Return} displayType={'text'} thousandSeparator={true}  suffix={'%'} decimalScale={2} /></td>
+                        <td style={{color:listValue.PnL<0 ? "red": ""}}> 
+                            <NumberFormat value={listValue.PnL} displayType={'text'} thousandSeparator={true} decimalScale={0} /><br></br>
+                            {this.GetPNLDetails(listValue)}
+                              
+                              
+                            
+                        </td>
+                        <td style={{color:listValue.PnLDaily<0 ? "red": ""}}> 
+                            <NumberFormat value={listValue.PnLDaily} displayType={'text'} thousandSeparator={true}  decimalScale={0} /><br></br>
+                            {this.GetDailyPNLDetails(listValue)}
+                        </td>
                         <td><Button variant="outline-danger" size="sm" onClick={() => this.handleCloseTrade(listValue.ISIN,listValue.Quantity,listValue.BondName)}>Close Position</Button>&nbsp;&nbsp;
                         <Button variant="outline-primary" size="sm" onClick={() => this.handleViewTrades(listValue.ISIN)}>View Trades</Button></td>
                     </tr>);
@@ -441,18 +566,13 @@ class PortfolioManager extends React.Component {
                     <th>ISIN</th>
                     <th>CCY</th>
                     <th>Quantity</th>
-                    <th>Purchase Date</th>
-                    <th>Purchase Price</th>
-                    <th>Purchase CPV</th>
-                    <th>Purchase AI</th>
-                    <th>Purchase DPV</th>
+                    <th>Settlement Date</th>
+                    <th>Settlement Price</th>
+                    <th>Settlement Amount</th>
                     <th>Current Price</th>
-                    <th>Current CPV</th>
-                    <th>Current AI</th>
-                    <th>Current DPV</th>
-                    <th>Coupons Rec</th>
                     <th>Market Value</th>
-                    <th>PnL</th>
+                    <th>Total PnL</th>
+                    <th>Daily PnL</th>
                     <th><Button variant="outline-primary" size="sm" onClick={this.handleShowAllTrades}>Show All</Button>{' '}</th>
                     </tr>
                 </thead>
@@ -468,16 +588,28 @@ class PortfolioManager extends React.Component {
                         <td style={{color:listValue.Quantity<0 ? "red": ""}}> <NumberFormat value={listValue.Quantity} displayType={'text'} thousandSeparator={true} decimalScale={0} /></td>
                         <td>{listValue.Date}</td>
                         <td> <NumberFormat value={listValue.PurchasePrice} displayType={'text'} thousandSeparator={true} decimalScale={2} /></td>
-                        <td style={{color:listValue.Purchase_CPV<0 ? "red": ""}}> <NumberFormat value={listValue.Purchase_CPV} displayType={'text'} thousandSeparator={true} decimalScale={0} /></td>
-                        <td style={{color:listValue.Purchase_AI<0 ? "red": ""}}> <NumberFormat value={listValue.Purchase_AI} displayType={'text'} thousandSeparator={true} decimalScale={0} /></td>
-                        <td style={{color:listValue.Purchase_DPV<0 ? "red": ""}}> <NumberFormat value={listValue.Purchase_DPV} displayType={'text'} thousandSeparator={true} decimalScale={0} /></td>
-                        <td>{listValue.TodayPrice}</td>
-                        <td style={{color:listValue.Today_CPV<0 ? "red": ""}}> <NumberFormat value={listValue.Today_CPV} displayType={'text'} thousandSeparator={true} decimalScale={0} /></td>
-                        <td style={{color:listValue.Today_AI<0 ? "red": ""}}> <NumberFormat value={listValue.Today_AI} displayType={'text'} thousandSeparator={true} decimalScale={0} /></td>
-                        <td style={{color:listValue.Today_DPV<0 ? "red": ""}}> <NumberFormat value={listValue.Today_DPV} displayType={'text'} thousandSeparator={true} decimalScale={0} /></td>
-                        <td style={{color:listValue.Coupons<0 ? "red": ""}}> <NumberFormat value={listValue.Coupons} displayType={'text'} thousandSeparator={true} decimalScale={0} /></td>
-                        <td style={{color:(listValue.Today_DPV +listValue.Coupons)<0 ? "red": ""}}> <NumberFormat value={(listValue.Today_DPV +listValue.Coupons)} displayType={'text'} thousandSeparator={true} decimalScale={0} /></td>
-                        <td style={{color:listValue.PnL<0 ? "red": ""}}> <NumberFormat value={listValue.PnL} displayType={'text'} thousandSeparator={true} decimalScale={0} /></td>                        
+
+                        <td style={{color:listValue.Purchase_DPV<0 ? "red": ""}}> 
+                            <NumberFormat value={listValue.Purchase_DPV} displayType={'text'} thousandSeparator={true} decimalScale={0} /><br></br>
+                            {this.GetTradeSettlement(listValue)}
+                            
+                        </td>
+                        
+                        <td>{listValue.TodayPrice}
+                        </td>
+                        <td style={{color:listValue.Today_DPV<0 ? "red": ""}}> 
+                            <NumberFormat value={listValue.Today_DPV} displayType={'text'} thousandSeparator={true} decimalScale={0} /><br></br>
+                            {this.GetTodaySettlement(listValue)}
+                            
+                        </td>
+                        <td style={{color:listValue.PnL<0 ? "red": ""}}> 
+                            <NumberFormat value={listValue.PnL} displayType={'text'} thousandSeparator={true} decimalScale={0} /><br></br>
+                            {this.GetPNLDetailsTrade(listValue)}
+                        </td>  
+                        <td style={{color:listValue.PnLDaily<0 ? "red": ""}}> 
+                            <NumberFormat value={listValue.PnLDaily} displayType={'text'} thousandSeparator={true} decimalScale={0} /><br></br>
+                            {this.GetDailyPNLDetailsTrade(listValue)}
+                        </td>                        
                         <td><Button variant="outline-danger" size="sm" onClick={() => this.handleDeleteTrade(listValue.TradeId)}>Delete</Button>&nbsp;&nbsp;
                         <Button variant="outline-warning" size="sm" onClick={() => this.handleEditTrade(listValue.TradeId,listValue.ISIN,listValue.Quantity,listValue.PurchasePrice,listValue.Date,listValue.BondName)}>Edit</Button></td>
                     </tr>);
