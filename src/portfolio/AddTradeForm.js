@@ -6,8 +6,7 @@ import SelectSearch from 'react-select-search';
 import './selectSearch.css';
 
 
-const SERVER_API="https://cbzghsqu3e.execute-api.ap-southeast-1.amazonaws.com/"
-//const SERVER_API="http://127.0.0.1:5000/"
+const SERVER_API="http://bevappserver2-env.eba-bpmmzn6g.ap-southeast-1.elasticbeanstalk.com/"
 
 class AddTradeForm extends React.Component {
     constructor(props) {
